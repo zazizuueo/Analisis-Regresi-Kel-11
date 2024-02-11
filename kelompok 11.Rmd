@@ -1,0 +1,276 @@
+---
+title: "Analisis Regresi Kel 11"
+author: "Me"
+date: "2024-02-11"
+output: html_document
+---
+
+# Kelompok 11 - Analisis Regresi K1
+
+1.  Nur Anggraini Fadhilah G1401221033
+
+2.  Azanti Zuhriyani G1401221057
+
+3.  Mila Nurpitriani G1401221090
+
+# **Deskripsi data**
+
+Data yang digunakan bersumber dari dataset Kaggle yang di upload oleh Hummaam Qaasim dengan judul **"Jobs and Salaries in Data Science"** pada tahun 2023.
+
+## Metode Analisis
+
+Analisis yang digunakan dalam pengolahan data yang bersumber dari dataset Kaggle ialah **Analisis Regresi Linier Sederhana.**
+
+Regresi linier sederhana adalah teknik statistik yang digunakan untuk mempelajari hubungan antara dua variabel. Dalam regresi linier sederhana, kita mencari hubungan antara variabel independen (x) dan variabel dependen (y) dengan menggunakan garis lurus terbaik yang meminimalkan jarak antara titik data dan garis lurus.
+
+**Variabel independen** (x) yang digunakan ialah work_years yaitu lamanya waktu kerja karyawan tersebut, dalam data work_years merupakan awal masuk karyawan tersebut, sehingga kami menghitung lama waktu karyawan bekerja dari tahun ini (2024) dikurangi dengan data dalam work_years.
+
+**Variable dependent** (y) yang digunakan ialah salary_in_usd yaitu pendapatan kotor tahunan yang didapat oleh setiap karyawan dan dikonversikan ke mata uang Dollar Amerika Serikat.
+
+Dalam kesempatan ini, kami menggunakan *software* Rstudio untuk memudahkan kami dalam mengolah dan menganalisis data.
+
+### **Impor data**
+
+Pertama-tama, impor data yang ingin dianalisis. Data dapat diimpor dalam berbagai format salah satunya ialah .xlsx
+
+Untuk membaca data yang kita impor, terlebih dahulu untuk memanggil library(readxl) untuk membaca data pada file excel tersebut.
+
+```{r}
+library(readxl)
+JobsinData<-read_excel("C:/Users/ASUS/Downloads/jobs_in_data.xlsx", sheet = "Worksheet3")
+JobsinData
+```
+
+### Read data
+
+Pada read data akan membaca data yang telah di impor sebelumnya dan menentukan peubah x dan peubah y yang diambil dari dataset yang dipakai.
+
+```{r}
+x <- JobsinData$years
+y <- JobsinData$salary_in_usd
+
+datajob<-data.frame(cbind(x,y))
+head(datajob)
+
+n <- nrow(datajob)
+n
+
+p <- ncol(datajob)
+p
+```
+
+### Eksplorasi Data
+
+Eksplorasi data dapat memuat banyak bentuk visualisasi dari data tersebut. Pada eksplorasi data ini terdepat pembuatan scatter plot, boxplot, dan ringkasan statistik deskriptif.
+
+```{r}
+plot(x,y)
+
+boxplot(x)
+boxplot(y)
+
+summary(x)
+summary(y)
+```
+
+## Pembentukan Model tanpa Fungsi Bawaan (manual)
+
+### Parameter Regresi
+
+Parameter regresi dapat diduga menggunakan beberapa metode, salah satunya adalah dengan **Metode Kuadrat Terkecil (MKT)** atau **Ordinary Least Square (OLS)**. Konsep metode kuadrat terkecil dalam menduga parameter regresi adalah dengan meminimumkan Jumlah Kuadrat Galat (JKG).
+
+```{r}
+b1<-(sum(x*y)-sum(x)*sum(y)/n)/(sum(x^2)-(sum(x)^2/n))
+b1
+b0<-mean(y)-b1*mean(x)
+b0
+
+```
+
+#### Interpretasi Parameter Model Regresi
+
+𝛃0 adalah nilai dugaan rataan yang tidak dipengaruhi oleh peubah bebas atau ketika nilai x bernilai nol, jika x = 0 berada dalam selang amatan.
+
+𝛃1 adalah nilai dugaan peubah rataan y jika x berubah satu satuan.
+
+Berdasarkan perhitungan yang dilakukan diperoleh dugaan persamaan garis regresi y duga :
+
+-   Rata-rata gaji seorang karyawan jika belum berpengalaman kerja tidak memiliki interpretasi yang bermakna karena x=0 tidak berada dalam selang amatan.
+
+-   Peningkatan satu tahun lamanya orang bekerja maka rata -rata gajinya akan menurun sebesar (𝛃1)
+
+### Koefisien Determinasi dan Penyesuaiannya
+
+```{r}
+r<-(sum(x*y)-sum(x)*sum(y)/n)/
+sqrt((sum(x^2)-(sum(x)^2/n))*(sum(y^2)-(sum(y)^2/n)))
+Koef_det<-r^2
+Koef_det
+
+Adj_R2<-1-((1-Koef_det)*(n-1)/(n-1-1))
+Adj_R2
+```
+
+### Std. Error Parameter Regresi
+
+```{r}
+galat<-y-(b0+b1*x)
+ragam_galat<-sum(galat^2)/(n-2)
+
+se_b1<-sqrt(ragam_galat/sum((x-mean(x))^2))
+se_b1
+
+se_b0<-sqrt(ragam_galat*(1/n+mean(x)^2/sum((x-mean(x))^2)))
+se_b0
+```
+
+### 
+
+```{r}
+t_b0<-b0/se_b0
+t_b0
+
+t_b1<-b1/se_b1
+t_b1
+
+2*pt(-abs(t_b0 ),df<-n-2)
+
+2*pt(-abs(t_b1 ),df<-n-2)
+```
+
+### Ukuran Keragaman
+
+```{r}
+galat<-y-(b0+b1*x)
+
+JKG <- sum((y - (b0+b1*x))^2)
+JKReg <- sum(((b0+b1*x)- mean(y))^2)
+JKT <- sum((y - mean(y))^2)
+JKT <- JKReg+JKG
+
+dbReg<-1
+dbg<-n-2
+dbt<-n-1
+
+Fhit<-(JKReg/dbReg)/(JKG/dbg)
+Fhit
+
+P.value<-1-pf(Fhit, dbReg, dbg, lower.tail <- F)
+P.value
+```
+
+### Pembentukan Model dengan Fungsi lm
+
+Dalam penggunaan fungsi **"lm"**, kita akan memeroleh secara langsung nilai-nilai pada pemodelan regresi dari data yang kita miliki. Hanya dengan mengeluarkan summary dan anova dari model yang terbentuk maka dapat diperoleh nilai parameter, signifikansi, standar eror, koefisien determinasi hingga ukuran keragamannya.
+
+```{r}
+model<-lm(y~x,data<-datajob)
+summary(model)
+
+anova(model)
+```
+
+### Penguraian Keragaman
+
+```{r}
+y.bar <- mean(y)
+plot(x,y)
+abline(model, col="red")
+text(30, 220, "Y_duga", adj = c(-0.1, 1.5), col = "red", cex = 0.8)
+abline(h=y.bar, col="blue")
+text(31, 185, "Y_bar", adj = c(-0.1, 1.5), col = "blue", cex = 0.8)
+
+(anova.model <- anova(model))
+
+(KTG <- anova.model$`Mean Sq`[2])
+```
+
+## Keragaman Dugaan Parameter
+
+### Dugaan Parameter 𝛃0
+
+Hipotesis uji:
+
+𝐻0: 𝛽0 = 0
+
+Semua nilai pendapatan karyawan dapat dijelaskan oleh lamanya waktu bekerja
+
+𝐻1: 𝛽0 ≠ 0
+
+Ada nilai pendapatan karyawan yang tidak dapat dijelaskan oleh lamanya waktu bekerja
+
+```{r}
+(b0 <- model$coefficients[[1]])
+(b1 <- model$coefficients[[2]])
+(se_b0 <- sqrt(KTG*(1/n+mean(x)^2/sum((x-mean(x))^2))))
+
+(t_b0 <- b0/se_b0)
+```
+
+Dengan nilai-t 105.1937 lebih besar dari t tabel yaitu 12.7062 maka tolak 𝐻0, artinya terdapat cukup bukti untuk menyatakan bahwa ada nilai pendapatan karyawan yang tidak dapat dijelaskan oleh lamanya waktu bekerja pada taraf nyata 5%
+
+### Dugaan Parameter 𝛃1
+
+Hipotesis uji:
+
+𝐻0: 𝛽1 = 0
+
+Tidak ada hubungan linier antara lamanya waktu bekerja dan rata-rata pendapatan kotor karyawan selama setahun
+
+𝐻1: 𝛽1 ≠ 0
+
+Ada hubungan linier antara lamanya waktu bekerja dan rata-rata pendapatan kotor karyawan selama setahun
+
+```{r}
+(se_b1 <- sqrt(KTG/sum((x-mean(x))^2)))
+
+(t_b1 <- b1/se_b1)
+```
+
+Dengan nilai-t yaitu -16.28013 lebih kecil dari t tabel yaitu 1.960218, maka tidak tolak H0, yang artinya belum cukup bukti untuk menyatakan bahwa lamanya waktu bekerja mempengaruhi rata-rata pendapatan tahunan atau gaji karyawan pada taraf nyata 5%
+
+## Selang Kepercayaan Parameter
+
+Secara umum, kita dapat memahami bahwa selang kepercayaan untuk 𝛃0 dan 𝛃1 terdiri atas batas bawah dan batas atas.
+
+Batas bawah untuk kedua dugaan parameter dalam taraf kepercayaan ⍺ = 0.05 dapat dihitung sebagai berikut.
+
+```{r}
+#batas bawah beta0
+(bb.b0 <- b0 - abs(qt(0.025, df=n-2))*se_b0)
+
+#batas bawah beta1
+(bb.b1 <- b1 - abs(qt(0.025, df=n-2))*se_b1)
+
+#batas atas beta0
+(ba.b0 <- b0 + abs(qt(0.025, df=n-2))*se_b0)
+
+#batas atas beta1
+(ba.b1 <- b1 + abs(qt(0.025, df=n-2))*se_b1)
+```
+
+### Selang Kepercayaan Rataan (Nilai Harapan) Amatan
+
+```{r}
+amatan.diduga <- data.frame(x=12)
+predict(model, amatan.diduga, interval = "confidence")
+```
+
+### Selang Kepercayaan Individu Amatan
+
+```{r}
+predict(model, amatan.diduga, interval = "prediction")
+```
+
+### Kesimpulan
+
+Model persamaan regresi tersebut ialah
+
+y = 175324.85 - 20189.051x\
+persamaan tersebut menggambarkan hubungan antara lamanya waktu bekerja (x) dengan gaji kotor karyawan selama setahun (y).
+
+Koefisien regresi -20189.051 menunjukkan bahwa setiap peningkatan dalam lamanya waktu dalam satu tahun bekerja (x) akan diikuti oleh penurunan -20189.051 dollar gaji kotor karyawan selama setahun (y).
+
+Intersep (175324.85) adalah nilai y saat x=0. Dalam konteks ini, itu mungkin tidak memiliki interpretasi praktis, karena waktu bekerja tidak dapat menjadi nol. Biasanya, intersep seperti itu lebih relevan dalam konteks di mana x dapat memiliki nilai nol yang bermakna.
+
+Jadi, secara keseluruhan, persamaan regresi tersebut dapat digunakan untuk memperkirakan gaji kotor karyawan selama setahun berdasarkan lamanya waktu bekerja.
